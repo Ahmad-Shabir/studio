@@ -5,6 +5,14 @@ import type { Flashcard } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+// Helper to get App ID safely
+const getAppId = () => {
+  if (typeof window !== 'undefined') {
+    return (window as any).__app_id || 'studybuddy-default';
+  }
+  return 'studybuddy-default';
+};
+
 export const useDeckActions = () => {
     const firestore = useFirestore();
 
@@ -12,7 +20,12 @@ export const useDeckActions = () => {
         if (!name.trim()) {
             throw new Error("Deck name cannot be empty.");
         }
-        const decksCollection = collection(firestore, 'users', uid, 'decks');
+        
+        const appId = getAppId();
+        // Updated path to use mandatory artifacts structure
+        const path = `artifacts/${appId}/users/${uid}/decks`;
+        const decksCollection = collection(firestore, path);
+        
         return addDoc(decksCollection, {
             name,
             cards,
@@ -20,7 +33,7 @@ export const useDeckActions = () => {
             createdAt: serverTimestamp(),
         }).catch(err => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `users/${uid}/decks`,
+                path: path,
                 operation: 'create',
                 requestResourceData: { name, cards }
             }));

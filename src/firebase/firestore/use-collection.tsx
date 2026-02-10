@@ -9,19 +9,44 @@ import {
   DocumentData,
   QuerySnapshot,
 } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
-import { errorEmitter } from '../error-emitter';
-import { FirestorePermissionError } from '../errors';
+// Using local relative imports (same directory) to avoid resolution issues
+import { useFirestore } from './provider';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
-export function useCollection<T>(path: string, uid?: string | null) {
+/**
+ * GLOBAL VARIABLE DECLARATIONS
+ */
+declare global {
+  interface Window {
+    __app_id?: string;
+  }
+}
+
+const getAppId = () => {
+  if (typeof window !== 'undefined') {
+    return window.__app_id || 'studybuddy-default';
+  }
+  return 'studybuddy-default';
+};
+
+export function useCollection<T>(collectionName: string, uid?: string | null) {
   const firestore = useFirestore();
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   const collectionQuery = useMemo(() => {
     if (!uid) return null;
-    return query(collection(firestore, 'users', uid, path)) as Query<DocumentData>;
-  }, [firestore, path, uid]);
+    
+    const appId = getAppId();
+    
+    /**
+     * MANDATORY RULE 1: Strict Paths
+     * Pattern: /artifacts/{appId}/users/{userId}/{collectionName}
+     */
+    const path = `artifacts/${appId}/users/${uid}/${collectionName}`;
+    return query(collection(firestore, path)) as Query<DocumentData>;
+  }, [firestore, collectionName, uid]);
 
   useEffect(() => {
     if (!collectionQuery) {
@@ -43,17 +68,17 @@ export function useCollection<T>(path: string, uid?: string | null) {
       },
       (error) => {
         const permissionError = new FirestorePermissionError({
-          path: (collectionQuery as any)._path.segments.join('/'),
+          path: collectionName,
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
-        console.error("Error fetching collection: ", error);
+        console.error("Firestore access error:", error);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [collectionQuery]);
+  }, [collectionQuery, collectionName]);
 
   return { data, loading };
 }
