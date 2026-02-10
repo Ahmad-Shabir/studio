@@ -10,9 +10,9 @@ import {
   QuerySnapshot,
 } from 'firebase/firestore';
 // Using local relative imports (same directory) to avoid resolution issues
-import { useFirestore } from './provider';
-import { errorEmitter } from './error-emitter';
-import { FirestorePermissionError } from './errors';
+import { useFirestore } from '../provider';
+import { errorEmitter } from '../error-emitter';
+import { FirestorePermissionError } from '../errors';
 
 /**
  * GLOBAL VARIABLE DECLARATIONS

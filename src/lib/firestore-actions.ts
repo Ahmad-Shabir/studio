@@ -32,11 +32,14 @@ export const useDeckActions = () => {
             userId: uid,
             createdAt: serverTimestamp(),
         }).catch(err => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: path,
-                operation: 'create',
-                requestResourceData: { name, cards }
-            }));
+            console.error("Error adding deck:", err);
+            if (err.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: path,
+                    operation: 'create',
+                    requestResourceData: { name, cards }
+                }));
+            }
             throw err;
         });
     };
