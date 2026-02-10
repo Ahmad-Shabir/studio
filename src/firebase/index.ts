@@ -15,6 +15,10 @@ export function initializeFirebase(): FirebaseInstances {
   if (firebaseInstances) {
     return firebaseInstances;
   }
+  
+  if (!firebaseConfig?.apiKey) {
+    throw new Error('Firebase config is not set. Please check your NEXT_PUBLIC_FIREBASE_ environment variables.');
+  }
 
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   const auth = getAuth(app);
@@ -25,6 +29,7 @@ export function initializeFirebase(): FirebaseInstances {
 }
 
 export * from './provider';
+export * from './client-provider';
 export * from './auth/use-user';
 export * from './firestore/use-collection';
 export * from './auth/actions';
